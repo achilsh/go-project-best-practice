@@ -4,4 +4,5 @@ use (
 	./go-design-optimsize-project
 	./go-project-layout-demo
 	./std-go-web-server
+	./unit_test_demo
 )
