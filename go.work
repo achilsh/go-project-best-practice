@@ -1,0 +1,7 @@
+go 1.22.0
+
+use (
+	./go-design-optimsize-project
+	./go-project-layout-demo
+	./std-go-web-server
+)
