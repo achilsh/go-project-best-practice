@@ -6,7 +6,8 @@
 * #
 * 按实际应用场景，分配单机版和分布式限流场景下使用开源的技术方案：
 * 1） 单机版限流：
-  
-
+   * 使用 golang开源库：golang.org/x/time/rate
+   * 使用go-zero的内部插件：
+   * 开源库：https://github.com/juju/ratelimit
 
 * 2） 分布式下的限流：
