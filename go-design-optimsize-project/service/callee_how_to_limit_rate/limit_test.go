@@ -38,5 +38,40 @@ func TestLimitCheck(t *testing.T) {
 	close(signalStop)
 
 	time.Sleep(10 * time.Second)
+}
+
+func TestLimitCheckJuJu(t *testing.T) {
+	l := NewLimiterJuJu(3, 1)
+	ch := make(chan int, 1000)
+	signalStop := make(chan struct{}, 1)
+	go func() {
+		for {
+			select {
+			case <-signalStop:
+				t.Logf("check routinue is close by caller.")
+				return
+			case data, ok := <-ch:
+				if !ok {
+					t.Logf("receive data chan.")
+					return
+				}
+				if l.Check() == false {
+					t.Logf("sender is to fast, data: %v", data)
+				} else {
+
+				}
+			}
+		}
+	}()
+
+	for i := 0; i < 20; i++ {
+		ch <- i
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	t.Logf("begin to close test.")
+	close(signalStop)
+
+	time.Sleep(10 * time.Second)
 
 }

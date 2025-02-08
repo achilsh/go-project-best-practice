@@ -4,6 +4,7 @@ package callee_how_to_limit_rate
 import (
 	"time"
 
+	"github.com/juju/ratelimit"
 	"golang.org/x/time/rate"
 )
 
@@ -29,4 +30,26 @@ func NewLimiter(r int, b int) *Limiter {
 // Check 如果有token，则返回 true，否则返回false.
 func (l *Limiter) Check() bool {
 	return l.lim.Allow()
+}
+
+type LimiterJuJu struct {
+	lim *ratelimit.Bucket
+	r   int // 每 r 秒往令牌桶投递令牌数。
+	b   int // 令牌桶的容量
+}
+
+func NewLimiterJuJu(r int, b int) *LimiterJuJu {
+	item := &LimiterJuJu{
+		r:   int(r),
+		b:   b,
+		lim: ratelimit.NewBucketWithRate(float64(r), int64(b)),
+	}
+	return item
+}
+
+func (j *LimiterJuJu) Check() bool {
+	if j.lim.TakeAvailable(1) != 1 {
+		return false
+	}
+	return true
 }
