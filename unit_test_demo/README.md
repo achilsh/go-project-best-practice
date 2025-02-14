@@ -7,3 +7,8 @@
 * 单元测试覆盖率计算:
 * 方式1： go test -coverprofile=coverage.out -gcflags=all=-l ./...
 * 方式2: 生成网页结果： go tool cover -html=coverage.out -o coverage.html 
+
+
+#
+* 通过压测 testing.B 得到: for _, v := range items {} 数组或者slice分片中每个元素时；存在copy数据 分片中每个元素，有性能问题。
+* 
