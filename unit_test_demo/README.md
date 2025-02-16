@@ -15,9 +15,17 @@
   c) TestMain是一个特殊的函数（相当于 main 函数），测试用例在执行时，会先执行 TestMain 函数，在 TestMain 中调用 m.Run() 函数来执行普通的测试函数。在m.Run()函数前面可以编写准备逻辑，在m.Run()后面可以编写清理逻辑。
 
 *
-* sqlmock 使和介绍：模拟数据库连接，数据库是项目中比较常见的依赖，在遇到数据库依赖时都可以用它。使用 开源库：  github.com/DATA-DOG/go-sqlmock； demo 在本目录下的 sql_mock_test.go 文件有描述。
+* sqlmock 使和介绍：模拟数据库连接，数据库是项目中比较常见的依赖，
+* 在遇到数据库依赖时都可以用它。使用 开源库：  github.com/DATA-DOG/go-sqlmock； 
+* demo 在本目录下的 sql_mock_test.go 文件有描述。
+* 
 
-* mock mysql 接口操作方式：1） 使用内存数据库 sqlite, 2) 使用上面面的sqlmock  3) 使用内存 mysql 服务： https://github.com/dolthub/go-mysql-server 下面将使用第三种方式来mock mysql的操作。
+* mock mysql 接口操作方式：1） 使用内存数据库 sqlite, 2) 使用上面面的sqlmock; 3) 使用内存 mysql 服务： https://github.com/dolthub/go-mysql-server 
+* 下面将使用第三种方式来mock mysql的操作。使用的有点： MySQL 完全兼容的数据库，能够用于golang的测试环境，它可以启动一个内存级别的mysql db，初始化一些数据， 可以让被测试对象的db连接指向该内存db。这样做测试的好处是：没有很夸张的mock成本;不用担心产生的脏数据问题;能顺带着测出 DAL 层sql不符合预期的问题。
+*  运行 mysql-mock-server 后，运行命令行客户端验证：  
+*  mysql --host=127.0.0.1 --port=3306 --user=root mydb --execute="SELECT * FROM mytable;"
+*  client 的连接地址 修改未 配置的ip和端口，就连接到本地内存mysql的环境。
+
 
 
 #
