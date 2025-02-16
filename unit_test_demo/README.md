@@ -28,7 +28,8 @@
 *  
 * mock redis server 接口。用于做自测redis的数据，使用的库有：https://github.com/alicebob/miniredis；  其中 FastForward() 手动减少系统中的ttl时间。
 * 
-* http mock； 主要是为了mock请求第三方的接口数据，使用库是: github.com/jarcoal/httpmock ；具体使用场景
+* http mock； 主要是为了mock请求第三方的接口数据，使用库是: github.com/jarcoal/httpmock ；可以自定义 Mock response处理。  
+* 注意httpmock 和 标准库的 httptest 的区别。
 * 
 
 #
