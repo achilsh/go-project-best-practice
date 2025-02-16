@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// 下面可以mock go中数据，比如：
+// 下面可以 mock go中数据，比如：
 // 1. 函数
 // 2. 全局变量
 // 3. 接口
@@ -167,5 +167,4 @@ func TestMockInterface(t *testing.T) {
 		ret := testItem.DoCall("sdfadf123")
 		convey.So(ret, convey.ShouldEqual, getNameRet)
 	})
-
 }
