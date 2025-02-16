@@ -24,9 +24,10 @@
 * 下面将使用第三种方式来mock mysql的操作。使用的有点： MySQL 完全兼容的数据库，能够用于golang的测试环境，它可以启动一个内存级别的mysql db，初始化一些数据， 可以让被测试对象的db连接指向该内存db。这样做测试的好处是：没有很夸张的mock成本;不用担心产生的脏数据问题;能顺带着测出 DAL 层sql不符合预期的问题。
 *  运行 mysql-mock-server 后，运行命令行客户端验证：  
 *  mysql --host=127.0.0.1 --port=3306 --user=root mydb --execute="SELECT * FROM mytable;"
-*  client 的连接地址 修改未 配置的ip和端口，就连接到本地内存mysql的环境。
-
-
+*  把client 的连接地址 修改为配置的ip和端口，就连接到本地内存mysql的环境。
+*  
+* mock redis server 接口。用于做自测redis的数据，使用的库有：https://github.com/alicebob/miniredis；  其中 FastForward() 手动减少系统中的ttl时间。
+* 
 
 #
 
