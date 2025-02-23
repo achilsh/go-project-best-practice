@@ -23,189 +23,142 @@ jaeger 的作用：
 * 使用官方提供的检测 instrumentation: https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/instrumentation
 * 如果要自定义增加检测，可参考：https://pkg.go.dev/go.opentelemetry.io/otel, 示例参考：https://github.com/open-telemetry/opentelemetry-go-contrib/tree/main/examples
 *  needs an export pipeline to send that telemetry to an observability platform. 官方提供的包：https://github.com/open-telemetry/opentelemetry-go/tree/main/exporters
-* 如何使用 open-telemetry sdk 来上报 tracer 数据， 下面以 opentelemetry-go sdk: https://github.com/open-telemetry/opentelemetry-go 为列解说： 
-* 1 ) 主动请求三方库的的tracer 使用： 创建tracer 对象：
-  ``` 
-    import (
-       "go.opentelemetry.io/otel/trace"
-    )
+* [过期使用： opentrace, demo： https://github.com/yurishkuro/opentracing-tutorial/tree/master/go]
+* #
 
-    var demoTracer trace.Tracer = tracing.InitOTEL("mysql", otelExporter, metricsFactory, logger).Tracer("mysql") 
-    var once sync.Once
+* span 跨度 介绍：表示一个工作单元或操作。
+A span contains name, time-related data, structured log messages, and other metadata (that is, Attributes) to provide information about the operation it tracks. span内有的东西：
+```
+  Name
+  Parent span ID (empty for root spans)
+  Start and End Timestamps
+  Span Context
+  Attributes
+  Span Events
+  Span Links
+  Span Status
+```
 
-    // InitOTEL initializes OpenTelemetry SDK, 其中 serviceName 是自定义的， exporterType 可以是： otlp or stdout
-    // matricFactory 是 import  (
-      "github.com/jaegertracing/jaeger/internal/metrics/prometheus"
-      "github.com/jaegertracing/jaeger/internal/metrics/prometheus") 
-       后
-    //  prometheus.New().Namespace(metrics.NSOptions{Name: "hotrod", Tags: nil})
-    func InitOTEL(serviceName string, exporterType string, metricsFactory metrics.Factory, logger log.Factory) trace.TracerProvider {
-      once.Do(func() {
-        otel.SetTextMapPropagator(
-          propagation.NewCompositeTextMapPropagator(
-            propagation.TraceContext{},
-            propagation.Baggage{},
-          ))
-      })
-
-      exp, err := createOtelExporter(exporterType)
-      if err != nil {
-        logger.Bg().Fatal("cannot create exporter", zap.String("exporterType", exporterType), zap.Error(err))
+```
+在tracer中 根 span , 其中 Span Context contains the Trace ID, it is used when creating Span Links.
+{
+  "name": "hello",
+  "parent_id": null,
+  "context": {
+    "trace_id": "5b8aa5a2d2c872e8321cf37308d69df2",
+    "span_id": "051581bf3cb55c13"
+  },
+  "start_time": "2022-04-29T18:52:58.114201Z",
+  "end_time": "2022-04-29T18:52:58.114687Z",
+  "attributes": {
+    "http.route": "some_route1"
+  },
+  "events": [
+    {
+      "name": "Guten Tag!",
+      "timestamp": "2022-04-29T18:52:58.114561Z",
+      "attributes": {
+        "event_attributes": 1
       }
-      logger.Bg().Debug("using " + exporterType + " trace exporter")
+    }
+  ]
+}
 
-      rpcmetricsObserver := rpcmetrics.NewObserver(metricsFactory, rpcmetrics.DefaultNameNormalizer)
 
-      res, err := resource.New(
-        context.Background(),
-        resource.WithSchemaURL(otelsemconv.SchemaURL),
-        resource.WithAttributes(otelsemconv.ServiceNameKey.String(serviceName)),
-        resource.WithTelemetrySDK(),
-        resource.WithHost(),
-        resource.WithOSType(),
-      )
-      if err != nil {
-        logger.Bg().Fatal("resource creation failed", zap.Error(err))
+在tracer中子span:
+
+{
+  "name": "hello-greetings",
+  "context": {
+    "trace_id": "5b8aa5a2d2c872e8321cf37308d69df2",
+    "span_id": "5fb397be34d26b51"
+  },
+  "parent_id": "051581bf3cb55c13",
+  "start_time": "2022-04-29T18:52:58.114304Z",
+  "end_time": "2022-04-29T22:52:58.114561Z",
+  "attributes": {
+    "http.route": "some_route2"
+  },
+  "events": [
+    {
+      "name": "hey there!",
+      "timestamp": "2022-04-29T18:52:58.114561Z",
+      "attributes": {
+        "event_attributes": 1
       }
-
-      tp := sdktrace.NewTracerProvider(
-        sdktrace.WithBatcher(exp, sdktrace.WithBatchTimeout(1000*time.Millisecond)),
-        sdktrace.WithSpanProcessor(rpcmetricsObserver),
-        sdktrace.WithResource(res),
-      )
-      logger.Bg().Debug("Created OTEL tracer", zap.String("service-name", serviceName))
-      return tp
-    }
-
-    // withSecure instructs the client to use HTTPS scheme, instead of hotrod's desired default HTTP
-    func withSecure() bool {
-      return strings.HasPrefix(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"), "https://") ||
-        strings.ToLower(os.Getenv("OTEL_EXPORTER_OTLP_INSECURE")) == "false"
-    }
-
-    func createOtelExporter(exporterType string) (sdktrace.SpanExporter, error) {
-      var exporter sdktrace.SpanExporter
-      var err error
-      switch exporterType {
-      case "jaeger":
-        return nil, errors.New("jaeger exporter is no longer supported, please use otlp")
-      case "otlp":
-        var opts []otlptracehttp.Option
-        if !withSecure() {
-          opts = []otlptracehttp.Option{otlptracehttp.WithInsecure()}
-        }
-        exporter, err = otlptrace.New(
-          context.Background(),
-          otlptracehttp.NewClient(opts...),
-        )
-      case "stdout":
-        exporter, err = stdouttrace.New()
-      default:
-        return nil, fmt.Errorf("unrecognized exporter type %s", exporterType)
+    },
+    {
+      "name": "bye now!",
+      "timestamp": "2022-04-29T18:52:58.114585Z",
+      "attributes": {
+        "event_attributes": 1
       }
-      return exporter, err
     }
+  ]
+}
 
+上面 多个 span 的 tracer_id 相同,不同的是 span_id,通过 praent_id 关联其他的 span_id 来建立 父子链路。
+```
+* 上面 span 的 attributes 属性字段介绍：
+* Span attributes are metadata attached to a span
+*  优先在创建跨度时添加属性，以使这些属性可用于 SDK 采样。如果必须在创建跨度后添加值，请使用该值更新跨度。
+* span 属性定义中的元素：
+```
+  Keys must be non-null string values
+  Values must be a non-null string, boolean, floating point value ,integer, or an array of these values
+```
+* 比如属性例子：
+```
+    Key	                      Value
+    http.request.method	      "GET"
+    network.protocol.version	"1.1"
+    url.path	                "/webshop/articles/4"
+    url.query	                  "?s=1"
+    server.address            	"example.com"
+    server.port              	8080
+    url.scheme	               "https"
+    http.route	               "/webshop/articles/:article_id"
+    http.response.status_code	  200
+    client.address	           "192.0.2.4"
+    client.socket.address	      "192.0.2.5" (the client goes through a proxy)
+    user_agent.original      	"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0"
+```
+* span link 是 span 内容之一；用于多个tracer 间的连接，比如：可以将第一个tracer 记录中的最后一个跨度链接到第二个跟踪记录中的第一个跨度.、
+* span event： 作为 structured log message (or annotation) on a Span； 通常用于表示跨度持续时间内有意义的单个时间点。
+
+  如何区分是使用 span attribute 还是 span event? 考虑  consider whether a specific timestamp is meaningful.
+
+* span kind: 
+  ```
+    1. SERVER indicates that the span covers server-side handling of a remote request while the client awaits a response.
+
+    2. CLIENT indicates that the span describes a request to a remote service where the client awaits a response. When the context of a CLIENT span is propagated, CLIENT span usually becomes a parent of a remote SERVER span.
+
+    3. PRODUCER indicates that the span describes the initiation or scheduling of a local or remote operation. This initiating span often ends before the correlated CONSUMER span, possibly even before the CONSUMER span starts.
+
+    4. In messaging scenarios with batching, tracing individual messages requires a new PRODUCER span per message to be created.
+
+    5. CONSUMER indicates that the span represents the processing of an operation initiated by a producer, where the producer does not wait for the outcome.
+
+    6. INTERNAL Default value. Indicates that the span represents an internal operation within an application, as opposed to an operations with remote parents or children.
 
   ```
-
-  ```
-  使用上面生成的tracer 对象：
-  ctx, span := d.tracer.Start(ctx, "SQL SELECT", trace.WithSpanKind(trace.SpanKindClient))
-	span.SetAttributes(
-		otelsemconv.PeerServiceKey.String("mysql"),
-		attribute.
-			Key("sql.query").
-			String(fmt.Sprintf("SELECT * FROM customer WHERE customer_id=%d", customerID)),
-	)
-	defer span.End()
-  ````
-
-
-
-  ```
-  3） 服务端的tracer,span的使用：
-  http 服务端定义：
-  type Server struct {
-    hostPort string
-    tracer   trace.TracerProvider
-    logger   log.Factory
-  }
-
-  func NewServer(hostPort string, tracer trace.TracerProvider, logger log.Factory) *Server {
-	return &Server{
-		hostPort: hostPort,
-		tracer:   tracer,
-		logger:   logger,
-	  }
-  }
-  上面函数第二个参数： 是由 tracing.InitOTEL("route", otelExporter, metricsFactory, logger) 创建，
-   otelExporter Otlp 或者 stdout
-
-
-  // Run starts the Route server
-  func (s *Server) Run() error {
-    mux := s.createServeMux()
-    s.logger.Bg().Info("Starting", zap.String("address", "http://"+s.hostPort))
-    server := &http.Server{
-      Addr:              s.hostPort,
-      Handler:           mux,
-      ReadHeaderTimeout: 3 * time.Second,
-    }
-    return server.ListenAndServe()
-  }
-  func (s *Server) createServeMux() http.Handler {
-      mux := tracing.NewServeMux(false, s.tracer, s.logger)
-      mux.Handle("/route", http.HandlerFunc(s.route))
-      mux.Handle("/debug/vars", http.HandlerFunc(movedToFrontend))
-      mux.Handle("/metrics", http.HandlerFunc(movedToFrontend))
-      return mux
-  }
-
   
-  // TracedServeMux is a wrapper around http.ServeMux that instruments handlers for tracing.
-  type TracedServeMux struct {
-    mux         *http.ServeMux
-    copyBaggage bool
-    tracer      trace.TracerProvider
-    logger      log.Factory
-  }
+* # 
+Baggage： 最好用于包含通常仅在请求开始时才可用的信息，并在下游进一步传播。
+他是独立的 kv 存储，和 spans属性的没有绝对的关系；可以手动从 baggage 读取数据，写到 span的属性中。
 
-  // Handle implements http.ServeMux#Handle, which is used to register new handler.
-  func (tm *TracedServeMux) Handle(pattern string, handler http.Handler) {
-    tm.logger.Bg().Debug("registering traced handler", zap.String("endpoint", pattern))
+* #
 
-    middleware := otelhttp.NewHandler(
-      otelhttp.WithRouteTag(pattern, traceResponseHandler(handler)),
-      pattern,
-      otelhttp.WithTracerProvider(tm.tracer))
-
-    tm.mux.Handle(pattern, middleware)
-  }
-
-  // ServeHTTP implements http.ServeMux#ServeHTTP.
-  func (tm *TracedServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    tm.mux.ServeHTTP(w, r)
-  }
-
-  // Returns a handler that generates a traceresponse header.
-  // https://github.com/w3c/trace-context/blob/main/spec/21-http_response_header_format.md
-  func traceResponseHandler(handler http.Handler) http.Handler {
-    // We use the standard TraceContext propagator, since the formats are identical.
-    // But the propagator uses "traceparent" header name, so we inject it into a map
-    // `carrier` and then use the result to set the "tracereponse" header.
-    var prop propagation.TraceContext
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-      carrier := make(map[string]string)
-      prop.Inject(r.Context(), propagation.MapCarrier(carrier))
-      w.Header().Add("traceresponse", carrier["traceparent"])
-      handler.ServeHTTP(w, r)
-    })
-  }
- ```
+信号：Metrics, logs, traces, and baggage are examples of signals.
 
 
- ```
-  4) grpc 的监控：
-  
- ```
+* tracer provider: => is a factory for Tracers.
+* tracer exporter: =>  send traces to a consumer. This consumer can be standard output for debugging and development-time, the OpenTelemetry Collector.
+
+#
+* 上下文传播：context propagation， 作用：可以使任何地方产生的信号相互关联。 包括 context 和 propagation.下面分别介绍：
+
+1) context: 上下文是一个对象，包含用于发送和接收服务或执行单元的信息，以便将一个信号与另一个信号相关联。
+2) propagation： 传播是在服务和进程之间移动上下文的机制。它对上下文对象进行序列化或反序列化，并提供相关信息以便从一个服务传播到另一个服务。
+通常是由检测库提供，对上层用户透明。默认传播器正在使用W3C(https://www.w3.org/TR/trace-context/) 跟踪上下文规范中指定的标头。

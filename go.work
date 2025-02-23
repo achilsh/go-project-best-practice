@@ -4,6 +4,7 @@ use (
 	./go-design-optimsize-project
 	./go-project-layout-demo
 	./how-build-Observability-systems/tracer-system/jaeger-install/src/jaeger
+	./how-build-Observability-systems/tracer-system/trace-opentelemetry-wrapper
 	./std-go-web-server
 	./unit_test_demo
 	how-build-Observability-systems/tracer-system/jaeger-demo
