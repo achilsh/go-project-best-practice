@@ -2,3 +2,4 @@
 .idea/*
 .vscode/*
 how-build-Observability-systems/tracer-system/jaeger-install
+how-build-Observability-systems/tracer-system/jaeger-demo/.idea/*
