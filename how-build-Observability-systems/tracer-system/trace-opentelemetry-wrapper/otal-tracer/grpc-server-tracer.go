@@ -61,7 +61,7 @@ func (g *GrpcServerTracer) Run() {
 }
 
 func(g *GrpcServerTracer)Echo(ctx context.Context, in *pb.StringMessage) (*pb.StringMessage, error){
-	ctx, span := g.tracer.Start(ctx, "Echo", trace.WithAttributes(attribute.String("extra.key", "extra.value")))
+	ctx, span := g.tracer.Start(ctx, "Echo", trace.WithSpanKind(trace.SpanKindServer), trace.WithAttributes(attribute.String("extra.key", "extra.value")))
 	defer  span.End() 
 	fmt.Println("[Echo] receive in message: ", in.Value)
 
