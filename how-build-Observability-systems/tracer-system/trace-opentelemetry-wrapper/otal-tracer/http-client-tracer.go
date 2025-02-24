@@ -16,6 +16,7 @@ type HTTPClient struct {
 	TracerProvider trace.TracerProvider
 	Client         *http.Client
 	TracerName string
+	Tracer trace.Tracer
 }
 
 func NewHTTPClient(tp trace.TracerProvider, tracerName string) *HTTPClient {
@@ -28,6 +29,7 @@ func NewHTTPClient(tp trace.TracerProvider, tracerName string) *HTTPClient {
 			),
 		},
 		TracerName: tracerName,
+		Tracer: tp.Tracer(tracerName),
 	}
 }
 
@@ -37,12 +39,13 @@ func (h *HTTPClient) Request(ctx context.Context, spaName string, method int, ur
 	var reqMethod string 
 	var req *http.Request = nil 
 	
-	ctx, span := h.TracerProvider.Tracer(h.TracerName).Start(ctx, spaName,trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.PeerService("ExampleService")))
+	ctx, span := h.Tracer.Start(ctx, spaName,trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.PeerService("ExampleService")))
 		// span.SetAttributes(
 			// otelsemconv.PeerServiceKey.String("mysql"),
 			// attribute.
 			// 	Key("sql.query").
 			// 	String(fmt.Sprintf("SELECT * FROM customer WHERE customer_id=%d", customerID)))
+	fmt.Println("get span: ", span)
 	defer span.End()
 
 	if method == 1 {
@@ -69,5 +72,6 @@ func (h *HTTPClient) Request(ctx context.Context, spaName string, method int, ur
 		return err, nil
 	} 
 	
+	fmt.Println("receive response data: ", string(responseBody))
 	return nil, responseBody
 }

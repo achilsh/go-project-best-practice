@@ -35,7 +35,7 @@ func (s *HttpServerTracer) createServeMux() http.Handler  {
 }
 
 
-type responseData struct {
+type ResponseData struct {
 	A int 
 	B string
 }
@@ -89,7 +89,7 @@ func (s *HttpServerTracer) dispatch(w http.ResponseWriter, r *http.Request) {
 	// }
 	// s.writeResponse(response, w, r)
 
-	var rData = &responseData{
+	var rData = &ResponseData{
 		A: 100,
 		B: "hello world",
 	}

@@ -4,3 +4,6 @@
 how-build-Observability-systems/tracer-system/jaeger-install
 how-build-Observability-systems/tracer-system/jaeger-demo/.idea/*
 how-build-Observability-systems/tracer-system/trace-opentelemetry-wrapper/.idea/*
+how-build-Observability-systems/tracer-system/trace-opentelemetry-wrapper/http-client  
+how-build-Observability-systems/tracer-system/trace-opentelemetry-wrapper/http-server
+

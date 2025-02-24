@@ -38,7 +38,7 @@ func InitOtel(serviceName string, exporterType string) (trace.TracerProvider, er
 		return nil, err 
 	}
 
-	fmt.Printf("using: %v trace exporter \n", exporterType)
+	fmt.Printf("using: %v; trace exporter \n", exporterType)
 	res, err := resource.New(
 		context.Background(),
 		resource.WithSchemaURL(otelsemconv.SchemaURL),
@@ -53,7 +53,7 @@ func InitOtel(serviceName string, exporterType string) (trace.TracerProvider, er
 	}
 
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp, sdktrace.WithBatchTimeout(1000*time.Millisecond)),
+		sdktrace.WithBatcher(exp, sdktrace.WithBatchTimeout(10*time.Millisecond)),
 		sdktrace.WithResource(res),
 	)
 	fmt.Printf("create otel tracer, service name: %v\n", serviceName)
