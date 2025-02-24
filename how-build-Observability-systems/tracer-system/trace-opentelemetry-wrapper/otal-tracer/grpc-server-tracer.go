@@ -1,23 +1,26 @@
 package otal_tracer
 
 import (
+	"context"
 	"fmt"
 	"net"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+
+	pb "tracer-opentelemetry-libs/gen/go/otal-tracer"
 )
 
 type GrpcServerTracer struct {
 	server   *grpc.Server
 	hostPort string
 	serverName string
-	tracer  trace.TracerProvider
+	tp  trace.TracerProvider
+	tracer trace.Tracer
+	pb.UnimplementedGrpcCallDemoServer
 }
-
-// 其中 pb 的接口
-// var _ DriverServiceServer = (*GrpcServerTracer)(nil)
 
 func NewGrpcServerTracer(srvName string, host string, otelExporter string)  *GrpcServerTracer{
 	g := &GrpcServerTracer {
@@ -33,8 +36,9 @@ func NewGrpcServerTracer(srvName string, host string, otelExporter string)  *Grp
 		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithTracerProvider(sp))),
 	)
 	//
-	g.tracer = sp
+	g.tp = sp
 	g.server= server
+	g.tracer = sp.Tracer("grpc-server")
 	return g
 }
 
@@ -46,7 +50,7 @@ func (g *GrpcServerTracer) Run() {
 		return 
 	}
 	//
-	// RegisterDriverServiceServer(g.server, g)
+	pb.RegisterGrpcCallDemoServer(g.server, g)
 	fmt.Printf("Starting, %v, type grpc\n",g.hostPort)
 	err = g.server.Serve(lis)
 	if err != nil {
@@ -54,6 +58,30 @@ func (g *GrpcServerTracer) Run() {
 		return 
 	}
 	return
+}
+
+func(g *GrpcServerTracer)Echo(ctx context.Context, in *pb.StringMessage) (*pb.StringMessage, error){
+	ctx, span := g.tracer.Start(ctx, "Echo", trace.WithAttributes(attribute.String("extra.key", "extra.value")))
+	defer  span.End() 
+	fmt.Println("[Echo] receive in message: ", in.Value)
+
+	ret := &pb.StringMessage{
+		Value: in.Value +", out data.",
+	}
+	return ret,nil
+}
+
+
+func(g *GrpcServerTracer)Hello(ctx context.Context, in *pb.StringMessage) (*pb.StringMessage, error) {
+	ctx, span := g.tracer.Start(ctx, "Hello", trace.WithAttributes(attribute.String("extra.key", "extra.value")))
+	defer  span.End() 
+	fmt.Println("[Hello] receive in message: ", in.Value)
+
+	ret := &pb.StringMessage{
+		Value: in.Value +", out data.",
+	}
+	
+	return ret,nil
 }
 
 // 实现pb 中定义的接口

@@ -16,6 +16,7 @@ type  GrpcClientTracer struct {
 	tracer trace.TracerProvider
 	conn *grpc.ClientConn
 	serverHost string 
+	client pb.GrpcCallDemoClient
 }
 
 func NewGrpcClientTracer(host string, tracerItem trace.TracerProvider) *GrpcClientTracer{
@@ -29,6 +30,7 @@ func NewGrpcClientTracer(host string, tracerItem trace.TracerProvider) *GrpcClie
 		conn:conn,
 		tracer: tracerItem,
 		serverHost: host,
+		client: NewClient(conn),
 	}
 
 	return ret
@@ -47,17 +49,30 @@ func NewClient(c *grpc.ClientConn) pb.GrpcCallDemoClient{
 
 func(c *GrpcClientTracer) Echo(ctx context.Context, in *pb.StringMessage, opts ...grpc.CallOption) (*pb.StringMessage, error) {
 	 tr := c.tracer.Tracer("grpc-client")
-	 ret := &pb.StringMessage{
-		Value: in.GetValue() +",  1111",
-	 }
 	 ctx, sp := tr.Start(ctx, "echo request", trace.WithSpanKind(trace.SpanKindClient))
 	 // 可以设置一些属性：比如： sp.SetAttributes(attribute.Key("param.driver.location").String(location))
 	 defer sp.End()
+	
+	 ret, err := c.client.Echo(ctx, in)
+	 if err != nil {
+		fmt.Println("call echo request fail, err: ", err)
+		return nil, err
+	 }
 
 	 return ret, nil
 }
 	
 func(c *GrpcClientTracer) Hello(ctx context.Context, in *pb.StringMessage, opts ...grpc.CallOption) (*pb.StringMessage, error) {
-	//TODO:
-	return nil,nil
+	tr := c.tracer.Tracer("grpc-client")
+	 ctx, sp := tr.Start(ctx, "hello request", trace.WithSpanKind(trace.SpanKindClient))
+	 // 可以设置一些属性：比如： sp.SetAttributes(attribute.Key("param.driver.location").String(location))
+	 defer sp.End()
+
+	 ret, err := c.client.Hello(ctx, in)
+	 if err != nil {
+		fmt.Println("call hello request fail, err: ", err)
+		return nil, err
+	 }
+
+	 return ret, nil
 }
