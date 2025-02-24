@@ -53,7 +53,7 @@ func InitOtel(serviceName string, exporterType string) (trace.TracerProvider, er
 	}
 
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp, sdktrace.WithBatchTimeout(10*time.Millisecond)),
+		sdktrace.WithBatcher(exp, sdktrace.WithBatchTimeout(1000*time.Millisecond)),
 		sdktrace.WithResource(res),
 	)
 	fmt.Printf("create otel tracer, service name: %v\n", serviceName)
@@ -77,7 +77,7 @@ func createOtelExporter(exporterType string) (sdktrace.SpanExporter, error) {
 			otlptracehttp.NewClient(opts...),
 		)
 	case "stdout":
-		exporter, err = stdouttrace.New()
+		exporter, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
 	default:
 		return nil, fmt.Errorf("unrecognized exporter type %s", exporterType)
 	}

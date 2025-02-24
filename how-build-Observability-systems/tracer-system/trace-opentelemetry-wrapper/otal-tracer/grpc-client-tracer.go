@@ -32,7 +32,7 @@ func NewGrpcClientTracer(host string, tracerItem trace.TracerProvider) *GrpcClie
 		serverHost: host,
 		client: NewClient(conn),
 	}
-
+	// trace.SpanFromContext()
 	return ret
 }
 func (g *GrpcClientTracer) Close() {
